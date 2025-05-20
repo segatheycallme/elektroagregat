@@ -28,7 +28,6 @@ pub struct MGElectronicProduct {
     manufacturer_code: Option<String>,
 }
 
-// #[allow(dead_code)]
 pub async fn simple_search(
     search: &str,
     client: &Client,
@@ -102,7 +101,7 @@ fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
         .select(&Selector::parse("span").unwrap())
         .next()?
         .inner_html()
-        == "dostupno"; // only works for serbian
+        == "dostupno"; // TODO: only works for serbian
 
     td_iter.next();
     let price: f64 = td_iter
