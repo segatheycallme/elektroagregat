@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# axum = "0.8.1"
+axum = {version = "0.8.4", features = ["query"]}
+serde = {version = "1.0.219", features = ["derive"]}
+tera = {version = "1.20.0"}
 # askama = "0.12.1"
 # askama_web = { version = "0.0.1-pre.0", features = ["axum-0.8"] }
-# tower-http = { version = "0.6.2", features = ["fs", "compression-br"] }
+tower-http = { version = "0.6.2", features = ["fs", "compression-br"] }
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12.15", features = ["brotli"] }
 scraper = "0.23.1"
