@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use elektroagregat::ElectronicPart;
 use itertools::Itertools;
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Selector};
@@ -24,20 +25,40 @@ pub struct MikroPrincProduct {
     description: String,
 }
 
-pub async fn simple_search(
-    search: &str,
-    client: &Client,
-) -> Result<Vec<MikroPrincProduct>, Box<dyn Error>> {
-    let url = Url::parse_with_params(BASE_URL, [("phrase", search)])?;
-    let body = client.get(url.to_string()).send().await?.text().await?;
-    let document = scraper::html::Html::parse_document(&body);
-    let rows = document
-        .select(&Selector::parse(".products-table table tbody").unwrap())
-        .next()
-        .ok_or(MikroPrinc::NoTable)?
-        .child_elements();
+impl ElectronicPart for MikroPrincProduct {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn price(&self) -> f64 {
+        self.price
+    }
+    fn stock(&self) -> bool {
+        self.stock
+    }
+    fn product_url(&self) -> &str {
+        &self.product_url
+    }
+    fn image_url(&self) -> Option<&str> {
+        self.image_url.as_deref()
+    }
+    fn description(&self) -> String {
+        self.description.replace(';', "\n")
+    }
+    async fn simple_search(
+        search: String,
+        client: &Client,
+    ) -> Result<Vec<MikroPrincProduct>, Box<dyn Error>> {
+        let url = Url::parse_with_params(BASE_URL, [("phrase", search)])?;
+        let body = client.get(url.to_string()).send().await?.text().await?;
+        let document = scraper::html::Html::parse_document(&body);
+        let rows = document
+            .select(&Selector::parse(".products-table table tbody").unwrap())
+            .next()
+            .ok_or(MikroPrinc::NoTable)?
+            .child_elements();
 
-    Ok(rows.map(|row| parse_row(row).unwrap()).collect())
+        Ok(rows.map(|row| parse_row(row).unwrap()).collect())
+    }
 }
 
 fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {

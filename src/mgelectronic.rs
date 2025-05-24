@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use elektroagregat::ElectronicPart;
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Selector};
 use thiserror::Error;
@@ -28,32 +29,60 @@ pub struct MGElectronicProduct {
     manufacturer_code: Option<String>,
 }
 
-pub async fn simple_search(
-    search: &str,
-    client: &Client,
-) -> Result<Vec<MGElectronicProduct>, Box<dyn Error>> {
-    let url = Url::parse_with_params(BASE_URL, [("q", search)])?;
-    let body = client.get(url.to_string()).send().await?.text().await?;
-    let document = scraper::html::Html::parse_document(&body);
-    let mut rows = document
-        .select(&Selector::parse(".search-results table tbody").unwrap())
-        .next()
-        .ok_or(MGError::NoTable)?
-        .child_elements();
-    rows.next(); // skip the header row
+impl ElectronicPart for MGElectronicProduct {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn price(&self) -> f64 {
+        self.price
+    }
+    fn stock(&self) -> bool {
+        self.stock
+    }
+    fn product_url(&self) -> &str {
+        &self.product_url
+    }
+    fn image_url(&self) -> Option<&str> {
+        self.image_url.as_deref()
+    }
+    fn description(&self) -> String {
+        let mut description = format!(
+            "Characteristics: {}\nHousing: {}",
+            self.characteristics, self.housing
+        );
+        if let Some(ref manafacturer) = self.manufacturer {
+            description += &format!("\nManafacturer: {}", manafacturer);
+        }
+        if let Some(ref manafacturer_code) = self.manufacturer_code {
+            description += &format!("\nManafacturer code: {}", manafacturer_code);
+        }
+        description
+    }
 
-    Ok(rows
-        .map(|row| {
-            let inner = parse_row(row).unwrap();
-            MGElectronicProduct {
-                product_url: url.join(&inner.product_url).unwrap().to_string(),
-                datasheet_url: inner
-                    .datasheet_url
-                    .map(|str| url.join(&str).unwrap().to_string()),
-                ..inner
-            }
-        })
-        .collect())
+    async fn simple_search(query: String, client: &Client) -> Result<Vec<Self>, Box<dyn Error>> {
+        let url = Url::parse_with_params(BASE_URL, [("q", query)])?;
+        let body = client.get(url.to_string()).send().await?.text().await?;
+        let document = scraper::html::Html::parse_document(&body);
+        let mut rows = document
+            .select(&Selector::parse(".search-results table tbody").unwrap())
+            .next()
+            .ok_or(MGError::NoTable)?
+            .child_elements();
+        rows.next(); // skip the header row
+
+        Ok(rows
+            .map(|row| {
+                let inner = parse_row(row).unwrap();
+                MGElectronicProduct {
+                    product_url: url.join(&inner.product_url).unwrap().to_string(),
+                    datasheet_url: inner
+                        .datasheet_url
+                        .map(|str| url.join(&str).unwrap().to_string()),
+                    ..inner
+                }
+            })
+            .collect())
+    }
 }
 
 fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
@@ -127,3 +156,10 @@ fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
         datasheet_url,
     })
 }
+
+// datasheet_url: Option<String>,
+// code: String,
+// characteristics: String,
+// housing: String,
+// manufacturer: Option<String>,
+// manufacturer_code: Option<String>,
