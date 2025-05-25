@@ -9,7 +9,7 @@ use thiserror::Error;
 const BASE_URL: &str = "https://www.mikroprinc.com/sr/pretraga";
 
 #[derive(Debug, Error)]
-pub enum MikroPrinc {
+pub enum MikroPrincError {
     #[error("Couldn't find main table")]
     NoTable,
 }
@@ -54,7 +54,7 @@ impl ElectronicPart for MikroPrincProduct {
         let rows = document
             .select(&Selector::parse(".products-table table tbody").unwrap())
             .next()
-            .ok_or(MikroPrinc::NoTable)?
+            .ok_or(MikroPrincError::NoTable)?
             .child_elements();
 
         Ok(rows.map(|row| parse_row(row).unwrap()).collect())
