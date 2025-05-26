@@ -1,6 +1,13 @@
 use std::error::Error;
 
+pub struct ScrapedSite {
+    pub name: &'static str,
+    pub url: &'static str,
+    pub color: &'static str,
+}
+
 pub trait ElectronicPart: std::marker::Sized {
+    const SITE_INFO: ScrapedSite;
     fn name(&self) -> &str;
     fn price(&self) -> f64;
     fn stock(&self) -> bool;

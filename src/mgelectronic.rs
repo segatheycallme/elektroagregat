@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use elektroagregat::ElectronicPart;
+use elektroagregat::{ElectronicPart, ScrapedSite};
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Selector};
 use thiserror::Error;
@@ -30,6 +30,11 @@ pub struct MGElectronicProduct {
 }
 
 impl ElectronicPart for MGElectronicProduct {
+    const SITE_INFO: ScrapedSite = ScrapedSite {
+        name: "MGElectronic",
+        url: "https://www.mgelectronic.rs",
+        color: "#b11715",
+    };
     fn name(&self) -> &str {
         &self.name
     }
