@@ -8,6 +8,12 @@ use thiserror::Error;
 
 const BASE_URL: &str = "https://www.mikroprinc.com/sr/pretraga";
 
+pub const SITE_INFO: ScrapedSite = ScrapedSite {
+    name: "MikroPrinc",
+    url: "https://www.mikroprinc.com",
+    color: "#f68a1f",
+};
+
 #[derive(Debug, Error)]
 pub enum MikroPrincError {
     #[error("Couldn't find main table")]
@@ -26,11 +32,6 @@ pub struct MikroPrincProduct {
 }
 
 impl ElectronicPart for MikroPrincProduct {
-    const SITE_INFO: ScrapedSite = ScrapedSite {
-        name: "MikroPrinc",
-        url: "https://www.mikroprinc.com",
-        color: "#f68a1f",
-    };
     fn name(&self) -> &str {
         &self.name
     }
@@ -49,21 +50,22 @@ impl ElectronicPart for MikroPrincProduct {
     fn description(&self) -> String {
         self.description.replace(';', "\n")
     }
-    async fn simple_search(
-        search: String,
-        client: &Client,
-    ) -> Result<Vec<MikroPrincProduct>, Box<dyn Error>> {
-        let url = Url::parse_with_params(BASE_URL, [("phrase", search)])?;
-        let body = client.get(url.to_string()).send().await?.text().await?;
-        let document = scraper::html::Html::parse_document(&body);
-        let rows = document
-            .select(&Selector::parse(".products-table table tbody").unwrap())
-            .next()
-            .ok_or(MikroPrincError::NoTable)?
-            .child_elements();
+}
 
-        Ok(rows.map(|row| parse_row(row).unwrap()).collect())
-    }
+pub async fn simple_search(
+    search: String,
+    client: &Client,
+) -> Result<Vec<MikroPrincProduct>, Box<dyn Error>> {
+    let url = Url::parse_with_params(BASE_URL, [("phrase", search)])?;
+    let body = client.get(url.to_string()).send().await?.text().await?;
+    let document = scraper::html::Html::parse_document(&body);
+    let rows = document
+        .select(&Selector::parse(".products-table table tbody").unwrap())
+        .next()
+        .ok_or(MikroPrincError::NoTable)?
+        .child_elements();
+
+    Ok(rows.map(|row| parse_row(row).unwrap()).collect())
 }
 
 fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {

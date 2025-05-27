@@ -8,8 +8,6 @@ use axum::{
     serve,
 };
 use elektroagregat::{ElectronicPart, ScrapedSite};
-use mgelectronic::MGElectronicProduct;
-use mikroprinc::MikroPrincProduct;
 use reqwest::Client;
 use reqwest::ClientBuilder;
 use serde::Deserialize;
@@ -24,7 +22,7 @@ mod mikroprinc;
 async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/", get(landing))
-        // .route("/search", get(search))
+        .route("/search", get(search))
         .layer(CompressionLayer::new().br(true))
         .with_state(ClientBuilder::new().brotli(true).build()?);
 
@@ -39,23 +37,32 @@ struct SearchOptions {
     query: String,
 }
 
-// #[derive(Template, WebTemplate)]
-// #[template(path = "search.html")]
-// struct SearchResults {
-//     title: String,
-//     navbar: Navbar,
-//     products: Vec<impl ElectronicPart>,
-// }
-//
-// async fn search(
-//     Query(search_options): Query<SearchOptions>,
-//     State(client): State<Client>,
-// ) -> impl IntoResponse {
-//     let mg_products = MGElectronicProduct::simple_search(search_options.query, &client)
-//         .await
-//         .unwrap();
-//     ""
-// }
+#[derive(Template, WebTemplate)]
+#[template(path = "search.html")]
+struct SearchResults {
+    maybe_products: Result<Vec<Box<dyn ElectronicPart>>, String>,
+}
+
+async fn search(
+    Query(search_options): Query<SearchOptions>,
+    State(client): State<Client>,
+) -> impl IntoResponse {
+    let maybe_products = async {
+        let mg_products = mgelectronic::simple_search(search_options.query.clone(), &client)
+            .await
+            .map_err(|err| format!("error: {err}"))?
+            .into_iter()
+            .map(|x| Box::new(x) as Box<dyn ElectronicPart>);
+        let mk_products = mikroprinc::simple_search(search_options.query.clone(), &client)
+            .await
+            .map_err(|err| format!("error: {err}"))?
+            .into_iter()
+            .map(|x| Box::new(x) as Box<dyn ElectronicPart>);
+        Ok(mg_products.chain(mk_products).collect())
+    }
+    .await;
+    SearchResults { maybe_products }
+}
 
 #[derive(Template, WebTemplate)]
 #[template(path = "landing.html")]
@@ -77,6 +84,6 @@ async fn landing() -> impl IntoResponse {
     LandingPage {
         title: "caooo".to_string(),
         navbar: Navbar::Standard,
-        sites: [MGElectronicProduct::SITE_INFO, MikroPrincProduct::SITE_INFO].into(),
+        sites: [mgelectronic::SITE_INFO, mikroprinc::SITE_INFO].into(),
     }
 }

@@ -7,6 +7,12 @@ use thiserror::Error;
 
 const BASE_URL: &str = "https://mgelectronic.rs/search";
 
+pub const SITE_INFO: ScrapedSite = ScrapedSite {
+    name: "MGElectronic",
+    url: "https://www.mgelectronic.rs",
+    color: "#b11715",
+};
+
 #[derive(Debug, Error)]
 pub enum MGError {
     #[error("Couldn't find main table")]
@@ -30,11 +36,6 @@ pub struct MGElectronicProduct {
 }
 
 impl ElectronicPart for MGElectronicProduct {
-    const SITE_INFO: ScrapedSite = ScrapedSite {
-        name: "MGElectronic",
-        url: "https://www.mgelectronic.rs",
-        color: "#b11715",
-    };
     fn name(&self) -> &str {
         &self.name
     }
@@ -63,31 +64,34 @@ impl ElectronicPart for MGElectronicProduct {
         }
         description
     }
+}
 
-    async fn simple_search(query: String, client: &Client) -> Result<Vec<Self>, Box<dyn Error>> {
-        let url = Url::parse_with_params(BASE_URL, [("q", query)])?;
-        let body = client.get(url.to_string()).send().await?.text().await?;
-        let document = scraper::html::Html::parse_document(&body);
-        let mut rows = document
-            .select(&Selector::parse(".search-results table tbody").unwrap())
-            .next()
-            .ok_or(MGError::NoTable)?
-            .child_elements();
-        rows.next(); // skip the header row
+pub async fn simple_search(
+    query: String,
+    client: &Client,
+) -> Result<Vec<MGElectronicProduct>, Box<dyn Error>> {
+    let url = Url::parse_with_params(BASE_URL, [("q", query)])?;
+    let body = client.get(url.to_string()).send().await?.text().await?;
+    let document = scraper::html::Html::parse_document(&body);
+    let mut rows = document
+        .select(&Selector::parse(".search-results table tbody").unwrap())
+        .next()
+        .ok_or(MGError::NoTable)?
+        .child_elements();
+    rows.next(); // skip the header row
 
-        Ok(rows
-            .map(|row| {
-                let inner = parse_row(row).unwrap();
-                MGElectronicProduct {
-                    product_url: url.join(&inner.product_url).unwrap().to_string(),
-                    datasheet_url: inner
-                        .datasheet_url
-                        .map(|str| url.join(&str).unwrap().to_string()),
-                    ..inner
-                }
-            })
-            .collect())
-    }
+    Ok(rows
+        .map(|row| {
+            let inner = parse_row(row).unwrap();
+            MGElectronicProduct {
+                product_url: url.join(&inner.product_url).unwrap().to_string(),
+                datasheet_url: inner
+                    .datasheet_url
+                    .map(|str| url.join(&str).unwrap().to_string()),
+                ..inner
+            }
+        })
+        .collect())
 }
 
 fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
