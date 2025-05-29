@@ -57,7 +57,7 @@ pub async fn simple_search(
         .ok_or(MikroPrincError::NoTable)?
         .child_elements();
 
-    Ok(rows.map(|row| parse_row(row).unwrap()).collect())
+    Ok(rows.filter_map(|row| parse_row(row)).collect())
 }
 
 fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {

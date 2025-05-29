@@ -73,15 +73,15 @@ pub async fn simple_search(
     rows.next(); // skip the header row
 
     Ok(rows
-        .map(|row| {
-            let inner = parse_row(row).unwrap();
-            MGElectronicProduct {
+        .filter_map(|row| {
+            let inner = parse_row(row)?;
+            Some(MGElectronicProduct {
                 product_url: url.join(&inner.product_url).unwrap().to_string(),
                 datasheet_url: inner
                     .datasheet_url
                     .map(|str| url.join(&str).unwrap().to_string()),
                 ..inner
-            }
+            })
         })
         .collect())
 }

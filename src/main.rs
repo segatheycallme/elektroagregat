@@ -8,10 +8,12 @@ use axum::{
     serve,
 };
 use elektroagregat::{ElectronicPart, ScrapedSite};
+use itertools::Itertools;
 use reqwest::Client;
 use reqwest::ClientBuilder;
 use serde::Deserialize;
 use std::error::Error;
+use tokio::join;
 use tower_http::compression::CompressionLayer;
 
 mod mgelectronic;
@@ -47,21 +49,33 @@ async fn search(
     Query(search_options): Query<SearchOptions>,
     State(client): State<Client>,
 ) -> impl IntoResponse {
-    let maybe_products = async {
-        let mg_products = mgelectronic::simple_search(search_options.query.clone(), &client)
-            .await
-            .map_err(|err| format!("error: {err}"))?
-            .into_iter()
-            .map(|non_standard_product| non_standard_product.into());
-        let mk_products = mikroprinc::simple_search(search_options.query.clone(), &client)
-            .await
-            .map_err(|err| format!("error: {err}"))?
-            .into_iter()
-            .map(|non_standard_product| non_standard_product.into());
-        Ok(mg_products.chain(mk_products).collect())
+    if search_options.query.len() < 3 {
+        return SearchResults {
+            maybe_products: Err("Query string must be longer than 3 characters".to_string()),
+        };
     }
-    .await;
-    SearchResults { maybe_products }
+
+    SearchResults {
+        maybe_products: get_products(search_options.query, &client).await,
+    }
+}
+
+async fn get_products(query: String, client: &Client) -> Result<Vec<ElectronicPart>, String> {
+    let mgelectronic_fut = async {
+        mgelectronic::simple_search(query.clone(), client)
+            .await
+            .map_err(|err| format!("error: {err}"))
+            .map(|vector| vector.into_iter().map_into().collect_vec().into_iter())
+    };
+    let mikroprinc_fut = async {
+        mikroprinc::simple_search(query.clone(), client)
+            .await
+            .map_err(|err| format!("error: {err}"))
+            .map(|vector| vector.into_iter().map_into().collect_vec().into_iter())
+    };
+    let (mgelectronic_products, mikroprinc_products) = join!(mgelectronic_fut, mikroprinc_fut);
+
+    Ok(mgelectronic_products?.chain(mikroprinc_products?).collect())
 }
 
 #[derive(Template, WebTemplate)]
