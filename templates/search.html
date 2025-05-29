@@ -1,6 +1,6 @@
 {% match maybe_products %} {% when Ok(products) %} {% for product in products %}
 <div>
-  <p>{{product.name()}}</p>
+  <p>{{product.name}}</p>
 </div>
 {% endfor %} {% when Err(reason) %}
 <div class="text-red-500">

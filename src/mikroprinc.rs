@@ -31,24 +31,16 @@ pub struct MikroPrincProduct {
     description: String,
 }
 
-impl ElectronicPart for MikroPrincProduct {
-    fn name(&self) -> &str {
-        &self.name
-    }
-    fn price(&self) -> f64 {
-        self.price
-    }
-    fn stock(&self) -> bool {
-        self.stock
-    }
-    fn product_url(&self) -> &str {
-        &self.product_url
-    }
-    fn image_url(&self) -> Option<&str> {
-        self.image_url.as_deref()
-    }
-    fn description(&self) -> String {
-        self.description.replace(';', "\n")
+impl From<MikroPrincProduct> for ElectronicPart {
+    fn from(val: MikroPrincProduct) -> Self {
+        ElectronicPart {
+            name: val.name,
+            price: val.price,
+            stock: val.stock,
+            product_url: val.product_url,
+            image_url: val.image_url,
+            description: val.description.replace(';', "\n"),
+        }
     }
 }
 

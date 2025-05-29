@@ -40,7 +40,7 @@ struct SearchOptions {
 #[derive(Template, WebTemplate)]
 #[template(path = "search.html")]
 struct SearchResults {
-    maybe_products: Result<Vec<Box<dyn ElectronicPart>>, String>,
+    maybe_products: Result<Vec<ElectronicPart>, String>,
 }
 
 async fn search(
@@ -52,12 +52,12 @@ async fn search(
             .await
             .map_err(|err| format!("error: {err}"))?
             .into_iter()
-            .map(|x| Box::new(x) as Box<dyn ElectronicPart>);
+            .map(|non_standard_product| non_standard_product.into());
         let mk_products = mikroprinc::simple_search(search_options.query.clone(), &client)
             .await
             .map_err(|err| format!("error: {err}"))?
             .into_iter()
-            .map(|x| Box::new(x) as Box<dyn ElectronicPart>);
+            .map(|non_standard_product| non_standard_product.into());
         Ok(mg_products.chain(mk_products).collect())
     }
     .await;

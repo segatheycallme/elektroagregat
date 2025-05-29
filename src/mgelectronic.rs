@@ -35,34 +35,26 @@ pub struct MGElectronicProduct {
     manufacturer_code: Option<String>,
 }
 
-impl ElectronicPart for MGElectronicProduct {
-    fn name(&self) -> &str {
-        &self.name
-    }
-    fn price(&self) -> f64 {
-        self.price
-    }
-    fn stock(&self) -> bool {
-        self.stock
-    }
-    fn product_url(&self) -> &str {
-        &self.product_url
-    }
-    fn image_url(&self) -> Option<&str> {
-        self.image_url.as_deref()
-    }
-    fn description(&self) -> String {
+impl From<MGElectronicProduct> for ElectronicPart {
+    fn from(val: MGElectronicProduct) -> Self {
         let mut description = format!(
             "Characteristics: {}\nHousing: {}",
-            self.characteristics, self.housing
+            val.characteristics, val.housing
         );
-        if let Some(ref manafacturer) = self.manufacturer {
+        if let Some(ref manafacturer) = val.manufacturer {
             description += &format!("\nManafacturer: {}", manafacturer);
         }
-        if let Some(ref manafacturer_code) = self.manufacturer_code {
+        if let Some(ref manafacturer_code) = val.manufacturer_code {
             description += &format!("\nManafacturer code: {}", manafacturer_code);
         }
-        description
+        ElectronicPart {
+            name: val.name,
+            price: val.price,
+            stock: val.stock,
+            product_url: val.product_url,
+            image_url: val.image_url,
+            description,
+        }
     }
 }
 
@@ -165,10 +157,3 @@ fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
         datasheet_url,
     })
 }
-
-// datasheet_url: Option<String>,
-// code: String,
-// characteristics: String,
-// housing: String,
-// manufacturer: Option<String>,
-// manufacturer_code: Option<String>,
