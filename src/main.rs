@@ -7,17 +7,16 @@ use axum::{
     routing::get,
     serve,
 };
-use elektroagregat::{ElectronicPart, ScrapedSite};
+use futures::future::try_join_all;
 use itertools::Itertools;
 use reqwest::Client;
 use reqwest::ClientBuilder;
+use scraping::{AvalaibleSite, ElectronicPart};
 use serde::Deserialize;
 use std::error::Error;
-use tokio::join;
 use tower_http::compression::CompressionLayer;
 
-mod mgelectronic;
-mod mikroprinc;
+mod scraping;
 
 // https://www.reddit.com/r/htmx/comments/1d6m1f2/comment/l6w06vv/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
 #[tokio::main]
@@ -45,6 +44,7 @@ struct SearchResults {
     maybe_products: Result<Vec<ElectronicPart>, String>,
 }
 
+#[axum::debug_handler]
 async fn search(
     Query(search_options): Query<SearchOptions>,
     State(client): State<Client>,
@@ -56,26 +56,34 @@ async fn search(
     }
 
     SearchResults {
-        maybe_products: get_products(search_options.query, &client).await,
+        maybe_products: get_products(
+            search_options.query,
+            &client,
+            &[AvalaibleSite::MGElectronic, AvalaibleSite::MikroPrinc],
+        )
+        .await,
     }
 }
 
-async fn get_products(query: String, client: &Client) -> Result<Vec<ElectronicPart>, String> {
-    let mgelectronic_fut = async {
-        mgelectronic::simple_search(query.clone(), client)
-            .await
-            .map_err(|err| format!("error: {err}"))
-            .map(|vector| vector.into_iter().map_into().collect_vec().into_iter())
-    };
-    let mikroprinc_fut = async {
-        mikroprinc::simple_search(query.clone(), client)
-            .await
-            .map_err(|err| format!("error: {err}"))
-            .map(|vector| vector.into_iter().map_into().collect_vec().into_iter())
-    };
-    let (mgelectronic_products, mikroprinc_products) = join!(mgelectronic_fut, mikroprinc_fut);
+async fn get_products(
+    query: String,
+    client: &Client,
+    avalaible_sites: &[AvalaibleSite],
+) -> Result<Vec<ElectronicPart>, String> {
+    let mut pending_site_searches = vec![];
+    for site in avalaible_sites {
+        pending_site_searches.push(async {
+            site.simple_search(query.clone(), client)
+                .await
+                .map_err(|err| format!("An error has occured: {err}"))
+        });
+    }
 
-    Ok(mgelectronic_products?.chain(mikroprinc_products?).collect())
+    Ok(try_join_all(pending_site_searches)
+        .await?
+        .into_iter()
+        .flat_map(|x| x.into_iter())
+        .collect_vec())
 }
 
 #[derive(Template, WebTemplate)]
@@ -83,7 +91,7 @@ async fn get_products(query: String, client: &Client) -> Result<Vec<ElectronicPa
 struct LandingPage {
     title: String,
     navbar: Navbar,
-    sites: Vec<ScrapedSite>,
+    sites: Vec<AvalaibleSite>,
 }
 
 #[derive(Template)]
@@ -98,6 +106,6 @@ async fn landing() -> impl IntoResponse {
     LandingPage {
         title: "caooo".to_string(),
         navbar: Navbar::Standard,
-        sites: [mgelectronic::SITE_INFO, mikroprinc::SITE_INFO].into(),
+        sites: [AvalaibleSite::MGElectronic, AvalaibleSite::MikroPrinc].into(),
     }
 }

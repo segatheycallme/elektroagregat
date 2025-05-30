@@ -25,10 +25,10 @@
         <label>
           <input type="checkbox" name="mgeletronic" />
           <span
-            class="py-1 px-2 border-2 border-[{{site.color}}] bg-[color-mix(in_srgb,{{site.color}}_6%,#ffffff_94%)] rounded-lg"
+            class="py-1 px-2 border-2 border-[{{site.get_color()}}] bg-[color-mix(in_srgb,{{site.get_color()}}_6%,#ffffff_94%)] rounded-lg"
           >
-            {{site.name}}
-            <a href="{{site.url}}">
+            {{site.get_name()}}
+            <a href="{{site.get_url()}}">
               <i class="fa-solid fa-up-right-from-square text-sm"></i>
             </a>
           </span>

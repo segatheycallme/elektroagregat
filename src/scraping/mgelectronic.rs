@@ -1,21 +1,29 @@
 use std::error::Error;
 
-use elektroagregat::{ElectronicPart, ScrapedSite};
+use itertools::Itertools;
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Selector};
 use thiserror::Error;
 
+use crate::ElectronicPart;
+
 const BASE_URL: &str = "https://mgelectronic.rs/search";
 
-pub const SITE_INFO: ScrapedSite = ScrapedSite {
-    name: "MGElectronic",
-    url: "https://www.mgelectronic.rs",
-    color: "#b11715",
-};
+pub const NAME: &str = "MGElectronic";
+pub const URL: &str = "https://mgelectronic.rs";
+pub const COLOR: &str = "#b11715";
+pub async fn simple_search(
+    query: String,
+    client: &Client,
+) -> Result<Vec<ElectronicPart>, Box<dyn Error>> {
+    direct_search(query, client)
+        .await
+        .map(|vec| vec.into_iter().map_into().collect_vec())
+}
 
 #[derive(Debug, Error)]
 pub enum MGError {
-    #[error("Couldn't find main table")]
+    #[error("Couldn't find main table for MGElectronic")]
     NoTable,
 }
 
@@ -58,7 +66,7 @@ impl From<MGElectronicProduct> for ElectronicPart {
     }
 }
 
-pub async fn simple_search(
+async fn direct_search(
     query: String,
     client: &Client,
 ) -> Result<Vec<MGElectronicProduct>, Box<dyn Error>> {
