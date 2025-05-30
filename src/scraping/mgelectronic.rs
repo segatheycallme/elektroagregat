@@ -9,6 +9,7 @@ use crate::ElectronicPart;
 
 const BASE_URL: &str = "https://mgelectronic.rs/search";
 
+pub const KEY: &str = "mgelectronic";
 pub const NAME: &str = "MGElectronic";
 pub const URL: &str = "https://mgelectronic.rs";
 pub const COLOR: &str = "#b11715";

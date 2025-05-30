@@ -9,6 +9,7 @@ use crate::ElectronicPart;
 
 const BASE_URL: &str = "https://www.mikroprinc.com/sr/pretraga";
 
+pub const KEY: &str = "mikroprinc";
 pub const NAME: &str = "MikroPrinc";
 pub const URL: &str = "https://www.mikroprinc.com";
 pub const COLOR: &str = "#f68a1f";
@@ -95,18 +96,20 @@ fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {
         .trim()
         .to_string();
 
-    let price: f64 = td_iter
-        .next()?
-        .select(&Selector::parse(".price").unwrap())
-        .next()?
-        .text()
-        .filter(|str| !str.trim().is_empty())
-        .take(2)
-        .map(|str| str.replace(',', "").replace(".", ""))
-        .join(".")
-        .trim()
-        .parse()
-        .unwrap();
+    let price: f64 = dbg!(
+        td_iter
+            .next()?
+            .select(&Selector::parse(".price").unwrap())
+            .next()?
+            .text()
+            .filter(|str| !str.trim().is_empty())
+            .take(2)
+            .map(|str| str.replace(',', "").replace(".", ""))
+            .join(".")
+            .trim()
+    )
+    .parse()
+    .unwrap_or(f64::NAN);
 
     let stock = td_iter
         .next()?

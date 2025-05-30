@@ -7,11 +7,18 @@
     <h2 class="text-xl text-gray-600 border-t-2 border-emerald-700 px-4">
       Search aggregator for electronic part sites
     </h2>
-    <form class="w-full" hx-get="search" hx-target="#products">
+    <form
+      id="landing-form"
+      class="w-full"
+      hx-get="search"
+      hx-target="#products"
+      hx-trigger="submit, input changed delay:350ms from:(#landing-form #query), input form:(#landing-form select)"
+    >
       <div class="w-full h-10 relative mt-2">
         <input
           type="text"
           name="query"
+          id="query"
           placeholder="Search here"
           class="w-full h-full bg-white border rounded-lg px-2"
         />
@@ -23,7 +30,7 @@
       <div class="flex gap-2 mx-3 select-none">
         {% for site in sites %}
         <label>
-          <input type="checkbox" name="mgeletronic" />
+          <input type="checkbox" checked name="{{site.get_key()}}" />
           <span
             class="py-1 px-2 border-2 border-[{{site.get_color()}}] bg-[color-mix(in_srgb,{{site.get_color()}}_6%,#ffffff_94%)] rounded-lg"
           >
@@ -35,8 +42,19 @@
         </label>
         {% endfor %}
       </div>
+      <div class="flex items-center mt-3">
+        <p class="mx-2">Order by:</p>
+        <select name="order_by" class="border bg-white p-1 rounded-md">
+          <option value="name_asc">Alphabetical</option>
+          <option value="name_desc">Reverse alphabetical</option>
+          <option value="price_asc">Price ascending</option>
+          <option value="price_desc">Price descending</option>
+        </select>
+      </div>
     </form>
   </div>
-  <div id="products"></div>
+  <div id="products">
+    {% if let Some(x) = products %} {{x|safe}} {% endif %}
+  </div>
 </div>
 {% endblock %}

@@ -12,7 +12,17 @@ pub enum AvalaibleSite {
     MikroPrinc,
 }
 
+pub const AVALAIBLE_SITES: [AvalaibleSite; 2] =
+    [AvalaibleSite::MGElectronic, AvalaibleSite::MikroPrinc];
+
 impl AvalaibleSite {
+    pub fn get_key(&self) -> &'static str {
+        match self {
+            Self::MGElectronic => mgelectronic::KEY,
+            Self::MikroPrinc => mikroprinc::KEY,
+        }
+    }
+
     pub fn get_name(&self) -> &'static str {
         match self {
             Self::MGElectronic => mgelectronic::NAME,
