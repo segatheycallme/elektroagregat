@@ -27,7 +27,6 @@ pub enum MikroPrincError {
     NoTable,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MikroPrincProduct {
     name: String,
@@ -47,6 +46,7 @@ impl From<MikroPrincProduct> for ElectronicPart {
             product_url: val.product_url,
             image_url: val.image_url,
             description: val.description.replace(';', "\n"),
+            color: COLOR.to_string(),
         }
     }
 }
@@ -73,7 +73,7 @@ fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {
         Some(
             el.select(&Selector::parse("img").unwrap())
                 .next()?
-                .attr("src")?
+                .attr("data-src")?
                 .to_string(),
         )
     });
@@ -113,6 +113,7 @@ fn parse_row(row: ElementRef) -> Option<MikroPrincProduct> {
         .select(&Selector::parse("p").unwrap())
         .next()?
         .inner_html()
+        .trim()
         == "Dostupan"; // TODO: serbian pt2
 
     Some(MikroPrincProduct {

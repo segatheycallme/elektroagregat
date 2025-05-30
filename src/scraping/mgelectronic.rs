@@ -27,7 +27,6 @@ pub enum MGError {
     NoTable,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MGElectronicProduct {
     name: String,
@@ -36,7 +35,7 @@ pub struct MGElectronicProduct {
     product_url: String,
     image_url: Option<String>,
     datasheet_url: Option<String>,
-    code: String,
+    _code: String,
     characteristics: String,
     housing: String,
     manufacturer: Option<String>,
@@ -62,6 +61,7 @@ impl From<MGElectronicProduct> for ElectronicPart {
             product_url: val.product_url,
             image_url: val.image_url,
             description,
+            color: COLOR.to_string(),
         }
     }
 }
@@ -158,7 +158,7 @@ fn parse_row(row: ElementRef) -> Option<MGElectronicProduct> {
         image_url,
         product_url,
         characteristics,
-        code,
+        _code: code,
         housing,
         price,
         stock,

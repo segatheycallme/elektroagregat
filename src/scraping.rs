@@ -2,9 +2,7 @@
 
 use std::error::Error;
 
-#[allow(dead_code)]
 mod mgelectronic;
-#[allow(dead_code)]
 mod mikroprinc;
 
 use reqwest::Client;
@@ -56,4 +54,5 @@ pub struct ElectronicPart {
     pub product_url: String,
     pub image_url: Option<String>,
     pub description: String,
+    pub color: String,
 }

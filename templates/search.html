@@ -1,8 +1,35 @@
-{% match maybe_products %} {% when Ok(products) %} {% for product in products %}
-<div>
-  <p>{{product.name}}</p>
+{% match maybe_products %} {% when Ok(products) %}
+<div
+  class="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 py-4 px-4 sm:px-10 lg:px-20"
+>
+  {% for product in products %}
+  <a href="{{product.product_url}}">
+    <div
+      class="bg-white shadow-md/20 shadow-[{{product.color}}] ring ring-[{{product.color}}] rounded-lg w-full h-full p-4 relative"
+    >
+      <h4 class="font-semibold h-14">{{product.name}}</h4>
+      <img
+        src="{% match product.image_url %} {% when Some(link) %} {{link}} {% when None %} https://www.mgelectronic.rs/content/images/thumbs/default-image_263.gif {% endmatch %}"
+        alt="image of product"
+        class="w-full aspect-square"
+      />
+      <p class="leading-tight">{{ product.description|linebreaksbr }}</p>
+      <br />
+      <div
+        class="flex justify-center items-center absolute bottom-1 right-0 w-full"
+      >
+        <span class="text-lg mr-3">{{product.price}}din</span>
+        {% if product.stock %}
+        <i class="fa-solid fa-check text-2xl text-green-700"></i>
+        {% else %}
+        <i class="fa-solid fa-x text-2xl text-red-700"></i>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
 </div>
-{% endfor %} {% when Err(reason) %}
+{% when Err(reason) %}
 <div class="text-red-500">
   <h1>{{reason}}</h1>
 </div>
